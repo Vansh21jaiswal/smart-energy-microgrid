@@ -1,0 +1,29 @@
+{
+  "application": {
+    "project_name": "microgrid-app",
+    "project_type": "advanced"
+  },
+  "functions": {
+    "functions": [
+      {
+        "name": "forecast-api",
+        "folder": "functions/forecast-api",
+        "handler": "main:app",
+        "file_name": "main.py",
+        "runtime": "python3.9",
+        "type": "appsail",
+        "port": 8080,
+        "stack_name": "python3.9",
+        "memory": 256
+      }
+    ]
+  },
+  "client": {
+    "web": [
+      {
+        "folder": "public",
+        "type": "hosting"
+      }
+    ]
+  }
+}

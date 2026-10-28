@@ -1,0 +1,27 @@
+# Secrets & Credentials — NEVER commit
+.env
+.env.*
+!.env.example
+.zoho_access_token
+*.token
+*.key
+
+# Backups & Archives
+*.zip
+*_backup*
+client_backup/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Catalyst & System
+.catalyst/
+.catalyst-debug.log
+.DS_Store
+Thumbs.db

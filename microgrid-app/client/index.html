@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Energy Microgrid – HackSphere 3.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ══════════════════════════════════ HEADER ══════════════════════════════════ -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <div>
+          <span class="logo-title">Smart Energy Microgrid</span>
+          <span class="logo-sub">Demand Forecasting Engine · HackSphere 3.0</span>
+        </div>
+      </div>
+      <div id="system-clock" class="clock"></div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════ ALERT BANNER ═══════════════════════════ -->
+  <div id="overload-banner" class="overload-banner hidden">
+    ⚠️ CRITICAL OVERLOAD ALERT — Demand ≥ 200 kW detected in forecast!
+  </div>
+
+  <!-- ══════════════════════════════════ MAIN ════════════════════════════════════ -->
+  <main class="container">
+
+    <!-- ─── STATUS CARDS ──────────────────────────────────────────── -->
+    <section class="cards-row" id="status-cards">
+      <div class="card stat-card" id="card-mode">
+        <div class="card-label">Grid Mode</div>
+        <div class="card-value" id="val-mode">—</div>
+      </div>
+      <div class="card stat-card" id="card-peak">
+        <div class="card-label">Peak Demand</div>
+        <div class="card-value" id="val-peak">—</div>
+        <div class="card-sub">kW</div>
+      </div>
+      <div class="card stat-card" id="card-avg">
+        <div class="card-label">Avg Demand</div>
+        <div class="card-value" id="val-avg">—</div>
+        <div class="card-sub">kW</div>
+      </div>
+      <div class="card stat-card" id="card-soc">
+        <div class="card-label">Battery SoC</div>
+        <div class="card-value" id="val-soc">—</div>
+        <div class="card-sub">%</div>
+      </div>
+    </section>
+
+    <!-- ─── INPUT PANEL ───────────────────────────────────────────── -->
+    <section class="card input-panel">
+      <h2 class="section-title">📡 Telemetry Input</h2>
+
+      <div class="tab-bar">
+        <button class="tab active" data-tab="form">Manual Form</button>
+        <button class="tab" data-tab="csv">CSV Upload</button>
+      </div>
+
+      <!-- Manual form -->
+      <div class="tab-content" id="tab-form">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Base Timestamp</span>
+            <input type="datetime-local" id="f-timestamp" />
+          </label>
+          <label class="form-field">
+            <span>Ambient Temp (°C)</span>
+            <input type="number" step="0.1" id="f-temp" placeholder="e.g. 28.5" />
+          </label>
+          <label class="form-field">
+            <span>Humidity (%)</span>
+            <input type="number" step="0.1" id="f-humidity" placeholder="e.g. 62.0" />
+          </label>
+          <label class="form-field">
+            <span>Solar Irradiance (W/m²)</span>
+            <input type="number" step="1" id="f-solar" placeholder="e.g. 450" />
+          </label>
+        </div>
+        <button class="btn btn-primary" id="btn-forecast-form">
+          ⚡ Generate 24-Hour Forecast
+        </button>
+      </div>
+
+      <!-- CSV upload -->
+      <div class="tab-content hidden" id="tab-csv">
+        <div class="upload-zone" id="drop-zone">
+          <div class="upload-icon">📂</div>
+          <p>Drag &amp; drop your CSV file here, or <label class="link" for="csv-input">browse</label></p>
+          <input type="file" id="csv-input" accept=".csv" class="hidden" />
+          <p class="upload-hint">Columns required: <code>timestamp, ambient_temp_c, humidity_pct, solar_irradiance_wm2</code></p>
+          <div id="csv-filename" class="csv-filename"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-forecast-csv">
+          ⚡ Generate 24-Hour Forecast from CSV
+        </button>
+      </div>
+    </section>
+
+    <!-- ─── CHARTS ────────────────────────────────────────────────── -->
+    <section class="card chart-card" id="section-charts" style="display:none">
+      <h2 class="section-title">📈 24-Hour Demand Forecast</h2>
+      <div class="chart-wrapper">
+        <canvas id="demand-chart"></canvas>
+      </div>
+    </section>
+
+    <section class="card chart-card" id="section-soc" style="display:none">
+      <h2 class="section-title">🔋 Battery State of Charge</h2>
+      <div class="chart-wrapper">
+        <canvas id="soc-chart"></canvas>
+      </div>
+    </section>
+
+    <!-- ─── FORECAST TABLE ────────────────────────────────────────── -->
+    <section class="card" id="section-table" style="display:none">
+      <h2 class="section-title">📋 Hourly Forecast Detail</h2>
+      <div class="table-wrapper">
+        <table class="forecast-table" id="forecast-table">
+          <thead>
+            <tr>
+              <th>Hour</th>
+              <th>Timestamp</th>
+              <th>Demand (kW)</th>
+              <th>Grid Mode</th>
+              <th>Battery SoC (%)</th>
+              <th>Alert</th>
+            </tr>
+          </thead>
+          <tbody id="forecast-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── LOADING / ERROR ───────────────────────────────────────── -->
+    <div id="loading" class="hidden loading-overlay">
+      <div class="spinner"></div>
+      <p>Running forecast model…</p>
+    </div>
+    <div id="error-msg" class="hidden error-msg"></div>
+
+  </main>
+
+  <footer class="footer">
+    HackSphere 3.0 · Smart Energy Microgrid &amp; Demand Forecasting Engine · Powered by Zoho Catalyst QuickML
+  </footer>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

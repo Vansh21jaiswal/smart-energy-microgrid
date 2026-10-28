@@ -1,0 +1,11 @@
+{
+  "client": {
+    "source": "client"
+  },
+  "appsail": [
+    {
+      "source": "functions/forecast-api",
+      "name": "forecast-api"
+    }
+  ]
+}
